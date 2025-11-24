@@ -9,6 +9,10 @@ export interface WeatherData {
   precipitation: number;
   cloudCover: number;
   uvIndex: number;
+  sunrise: string;
+  sunset: string;
+  visibility: number;
+  windDirection: number;
 }
 
 export interface HourlyData {
@@ -71,7 +75,7 @@ export function getWeatherEmoji(code: number): string {
 export async function getCurrentWeather(latitude: number, longitude: number): Promise<WeatherData | null> {
   try {
     const response = await fetch(
-      `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,weather_code,surface_pressure,cloud_cover,wind_speed_10m&timezone=Asia/Bangkok`
+      `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,weather_code,surface_pressure,cloud_cover,wind_speed_10m,wind_direction_10m,uv_index,precipitation&daily=sunrise,sunset,uv_index_max&timezone=Asia/Bangkok&forecast_days=1`
     );
     
     if (!response.ok) {
@@ -80,6 +84,7 @@ export async function getCurrentWeather(latitude: number, longitude: number): Pr
     
     const data = await response.json();
     const current = data.current;
+    const daily = data.daily;
     
     return {
       temperature: Math.round(current.temperature_2m),
@@ -87,9 +92,13 @@ export async function getCurrentWeather(latitude: number, longitude: number): Pr
       windSpeed: Math.round(current.wind_speed_10m),
       pressure: Math.round(current.surface_pressure),
       weatherCode: current.weather_code,
-      precipitation: 0,
+      precipitation: current.precipitation || 0,
       cloudCover: current.cloud_cover,
-      uvIndex: 0, // Open Meteo free tier doesn't include UV
+      uvIndex: Math.round(current.uv_index || daily.uv_index_max?.[0] || 0),
+      sunrise: daily.sunrise?.[0] ? new Date(daily.sunrise[0]).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '--:--',
+      sunset: daily.sunset?.[0] ? new Date(daily.sunset[0]).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '--:--',
+      visibility: 10, // Open Meteo doesn't provide visibility, default to 10km
+      windDirection: current.wind_direction_10m || 0,
     };
   } catch (error) {
     console.error('Error fetching weather data:', error);

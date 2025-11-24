@@ -29,18 +29,18 @@ export async function GET(request: NextRequest) {
 
 export const POST = requireAdmin(async (request: NextRequest) => {
   try {
-    const { name, description, price, image, link, category } = await request.json();
+    const { name, description, price, image, link, category, rating } = await request.json();
 
-    if (!name || !price || !category) {
+    if (!name || !description || !price || !category) {
       return NextResponse.json(
-        { error: 'Name, price, and category are required' },
+        { error: 'Name, description, price, and category are required' },
         { status: 400 }
       );
     }
 
     const result = await pool.query(
-      'INSERT INTO products (name, description, price, image, link, category) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-      [name, description, price, image, link, category]
+      'INSERT INTO products (name, description, price, image, link, category, rating) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+      [name, description, price, image || '📦', link || '#', category, rating || 0]
     );
 
     return NextResponse.json({ product: result.rows[0] }, { status: 201 });

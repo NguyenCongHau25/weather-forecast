@@ -29,22 +29,22 @@ export function getUserFromRequest(request: NextRequest): AuthUser | null {
   return verifyToken(token);
 }
 
-export function requireAuth(handler: (request: NextRequest, user: AuthUser) => Promise<NextResponse>) {
-  return async (request: NextRequest) => {
+export function requireAuth(handler: (request: NextRequest, user: AuthUser, context?: any) => Promise<NextResponse>) {
+  return async (request: NextRequest, context?: any) => {
     const user = getUserFromRequest(request);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    return handler(request, user);
+    return handler(request, user, context);
   };
 }
 
-export function requireAdmin(handler: (request: NextRequest, user: AuthUser) => Promise<NextResponse>) {
-  return async (request: NextRequest) => {
+export function requireAdmin(handler: (request: NextRequest, user: AuthUser, context?: any) => Promise<NextResponse>) {
+  return async (request: NextRequest, context?: any) => {
     const user = getUserFromRequest(request);
     if (!user || user.role !== 'admin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
-    return handler(request, user);
+    return handler(request, user, context);
   };
 }

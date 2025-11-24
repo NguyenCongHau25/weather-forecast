@@ -29,15 +29,26 @@ export async function GET(
   }
 }
 
-export const PUT = requireAdmin(async (request: NextRequest) => {
+export const PUT = requireAdmin(async (
+  request: NextRequest,
+  user,
+  context: { params: { id: string } }
+) => {
   try {
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id') || request.nextUrl.pathname.split('/').pop();
-    const { name, description, price, image, link, category } = await request.json();
+    const id = context.params.id;
+    const { name, description, price, image, link, category, rating } = await request.json();
+
+    // Validate required fields
+    if (!name || !description || !category || price === undefined || rating === undefined) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
 
     const result = await pool.query(
-      'UPDATE products SET name = $1, description = $2, price = $3, image = $4, link = $5, category = $6 WHERE id = $7 RETURNING *',
-      [name, description, price, image, link, category, id]
+      'UPDATE products SET name = $1, description = $2, price = $3, image = $4, link = $5, category = $6, rating = $7, updated_at = CURRENT_TIMESTAMP WHERE id = $8 RETURNING *',
+      [name, description, price, image, link, category, rating, id]
     );
 
     if (result.rows.length === 0) {
@@ -57,9 +68,13 @@ export const PUT = requireAdmin(async (request: NextRequest) => {
   }
 });
 
-export const DELETE = requireAdmin(async (request: NextRequest) => {
+export const DELETE = requireAdmin(async (
+  request: NextRequest,
+  user,
+  context: { params: { id: string } }
+) => {
   try {
-    const id = request.nextUrl.pathname.split('/').pop();
+    const id = context.params.id;
     const result = await pool.query(
       'DELETE FROM products WHERE id = $1 RETURNING id',
       [id]
