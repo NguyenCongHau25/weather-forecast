@@ -3,6 +3,8 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --coral-500: #ea6c57;
+  --coral-600: #e05243;
 }
 
 @theme inline {
@@ -10,6 +12,8 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --color-coral-500: var(--coral-500);
+  --color-coral-600: var(--coral-600);
 }
 
 @media (prefers-color-scheme: dark) {
