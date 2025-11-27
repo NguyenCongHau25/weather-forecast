@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { getAirQualityHistory, AirQualityData } from '@/lib/air-quality-api';
+import { runModelInference, ModelType } from '@/lib/prediction-service';
 import AirQualityChart from '@/components/AirQualityChart';
-import { EnvironmentOutlined, LoadingOutlined } from '@ant-design/icons';
+import { EnvironmentOutlined, LoadingOutlined, ExperimentOutlined } from '@ant-design/icons';
 
 // Location: Thu Duc, Ho Chi Minh City
 const LOCATION = {
@@ -21,29 +22,43 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [pollutant, setPollutant] = useState<Pollutant>('pm2_5');
   const [timeframe, setTimeframe] = useState<Timeframe>('hourly');
+  const [selectedModel, setSelectedModel] = useState<ModelType>('api');
 
   useEffect(() => {
-    const fetchAirQuality = async () => {
+    const fetchData = async () => {
       setLoading(true);
       setError(null);
       try {
-        const data = await getAirQualityHistory(
-          LOCATION.latitude,
-          LOCATION.longitude,
-          pollutant,
-          timeframe
-        );
+        let data: AirQualityData | null;
+
+        if (selectedModel === 'api') {
+          data = await getAirQualityHistory(
+            LOCATION.latitude,
+            LOCATION.longitude,
+            pollutant,
+            timeframe
+          );
+        } else {
+          data = await runModelInference(
+            selectedModel,
+            LOCATION.latitude,
+            LOCATION.longitude,
+            pollutant,
+            timeframe
+          );
+        }
+
         setAirQualityData(data);
       } catch (err) {
-        setError('Không thể tải dữ liệu chất lượng không khí.');
+        setError('Không thể tải dữ liệu.');
         console.error(err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchAirQuality();
-  }, [pollutant, timeframe]);
+    fetchData();
+  }, [pollutant, timeframe, selectedModel]);
 
   const getAverage = () => {
     if (!airQualityData || !airQualityData[pollutant]) return 0;
@@ -78,7 +93,38 @@ export default function Home() {
                 <span>{LOCATION.name}, TP. Hồ Chí Minh</span>
               </div>
             </div>
-            <div className="flex space-x-2 mt-4 sm:mt-0">
+            <div className="flex flex-wrap gap-2 mt-4 sm:mt-0">
+              {/* Model Selector */}
+              <div className="flex bg-gray-100 rounded-lg p-1 mr-2">
+                <button
+                  onClick={() => setSelectedModel('api')}
+                  className={`px-3 py-1 text-sm font-medium rounded-md transition-colors flex items-center ${
+                    selectedModel === 'api' ? 'bg-white text-blue-600 shadow' : 'text-gray-600 hover:bg-gray-200'
+                  }`}
+                  title="Dữ liệu thực tế từ Open-Meteo API"
+                >
+                  <EnvironmentOutlined className="mr-1" /> API
+                </button>
+                <button
+                  onClick={() => setSelectedModel('model1')}
+                  className={`px-3 py-1 text-sm font-medium rounded-md transition-colors flex items-center ${
+                    selectedModel === 'model1' ? 'bg-white text-purple-600 shadow' : 'text-gray-600 hover:bg-gray-200'
+                  }`}
+                  title="Mô hình dự đoán 1 (Demo)"
+                >
+                  <ExperimentOutlined className="mr-1" /> Model 1
+                </button>
+                <button
+                  onClick={() => setSelectedModel('model2')}
+                  className={`px-3 py-1 text-sm font-medium rounded-md transition-colors flex items-center ${
+                    selectedModel === 'model2' ? 'bg-white text-purple-600 shadow' : 'text-gray-600 hover:bg-gray-200'
+                  }`}
+                  title="Mô hình dự đoán 2 (Demo)"
+                >
+                  <ExperimentOutlined className="mr-1" /> Model 2
+                </button>
+              </div>
+
               {/* Timeframe Toggle */}
               <div className="flex bg-gray-100 rounded-lg p-1">
                 <button
