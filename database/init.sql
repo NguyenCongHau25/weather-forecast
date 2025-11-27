@@ -18,7 +18,7 @@ CREATE TABLE products (
     name VARCHAR(255) NOT NULL,
     description TEXT,
     price DECIMAL(10, 2) NOT NULL,
-    image VARCHAR(500),
+    image TEXT,
     link VARCHAR(500),
     category VARCHAR(100) NOT NULL,
     rating DECIMAL(3, 2) DEFAULT 0,

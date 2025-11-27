@@ -1,7 +1,7 @@
 import { Pool } from 'pg';
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres123@localhost:5432/weather_forecast',
+  connectionString: process.env.DATABASE_URL || 'postgresql://myuser:mypassword@localhost:5432/weather_forecast_db',
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 2000,

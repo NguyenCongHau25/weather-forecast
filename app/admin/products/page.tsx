@@ -248,6 +248,9 @@ export default function ProductsManagement() {
                     ID
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Hình ảnh
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                     Tên sản phẩm
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
@@ -272,6 +275,16 @@ export default function ProductsManagement() {
                   <tr key={product.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 text-sm text-gray-900">
                       {product.id}
+                    </td>
+                    <td className="px-6 py-4">
+                      <img
+                        src={product.image}
+                        alt={product.name}
+                        className="w-12 h-12 object-cover rounded-lg border border-gray-200"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'https://via.placeholder.com/48?text=No+Image';
+                        }}
+                      />
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
                       {product.name}
@@ -449,16 +462,55 @@ export default function ProductsManagement() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Icon/Emoji *
+                    Hình ảnh sản phẩm *
                   </label>
-                  <input
-                    type="text"
-                    value={formData.image}
-                    onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="VD: 🌂, ☂️, 👒..."
-                    required
-                  />
+                  <div className="space-y-2">
+                    {formData.image && (
+                      <div className="relative w-20 h-20">
+                        <img
+                          src={formData.image}
+                          alt="Preview"
+                          className="w-full h-full object-cover rounded-lg border border-gray-200"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, image: '' })}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                        >
+                          <CloseOutlined className="text-xs" />
+                        </button>
+                      </div>
+                    )}
+                    <div className="flex flex-col gap-2">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              setFormData({ ...formData, image: reader.result as string });
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                        className="block w-full text-sm text-gray-500
+                          file:mr-4 file:py-2 file:px-4
+                          file:rounded-full file:border-0
+                          file:text-sm file:font-semibold
+                          file:bg-blue-50 file:text-blue-700
+                          hover:file:bg-blue-100"
+                      />
+                      <input
+                        type="text"
+                        value={formData.image}
+                        onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                        placeholder="Hoặc nhập URL hình ảnh..."
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
 

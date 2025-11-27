@@ -11,7 +11,9 @@ import {
   MenuOutlined,
   CloseOutlined,
   SettingOutlined,
+  LogoutOutlined,
 } from '@ant-design/icons';
+import { useRouter } from 'next/navigation';
 
 interface User {
   id: number;
@@ -24,6 +26,7 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const pathname = usePathname();
+  const router = useRouter();
 
   useEffect(() => {
     checkAuth();
@@ -35,9 +38,22 @@ export default function Header() {
       if (response.ok) {
         const data = await response.json();
         setUser(data);
+      } else {
+        setUser(null);
       }
     } catch (error) {
       console.error('Error checking auth:', error);
+      setUser(null);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      setUser(null);
+      router.push('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
     }
   };
 
@@ -87,7 +103,7 @@ export default function Header() {
                     className="flex items-center space-x-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-full transition-colors"
                   >
                     <SettingOutlined className="text-lg" />
-                    <span>Admin</span>
+                    <span>Quản lý</span>
                   </Link>
                 )}
                 <Link
@@ -97,6 +113,13 @@ export default function Header() {
                   <UserOutlined className="text-lg" />
                   <span>{user.name}</span>
                 </Link>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center space-x-2 bg-gray-100 hover:bg-red-100 text-gray-700 hover:text-red-600 px-3 py-2 rounded-full transition-colors"
+                  title="Đăng xuất"
+                >
+                  <LogoutOutlined className="text-lg" />
+                </button>
               </div>
             ) : (
               <div className="flex items-center space-x-4">
@@ -149,7 +172,7 @@ export default function Header() {
                       onClick={() => setIsMenuOpen(false)}
                     >
                       <SettingOutlined className="text-lg" />
-                      <span>Admin</span>
+                      <span>Quản lý</span>
                     </Link>
                   )}
                   <Link
@@ -160,6 +183,16 @@ export default function Header() {
                     <UserOutlined className="text-lg" />
                     <span>{user.name}</span>
                   </Link>
+                  <button
+                    onClick={() => {
+                      handleLogout();
+                      setIsMenuOpen(false);
+                    }}
+                    className="flex items-center space-x-2 py-2 text-red-600 w-full text-left"
+                  >
+                    <LogoutOutlined className="text-lg" />
+                    <span>Đăng xuất</span>
+                  </button>
                 </>
               ) : (
                 <>

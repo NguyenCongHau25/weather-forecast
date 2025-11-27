@@ -1,159 +1,145 @@
 # Weather Forecast 🌤️
 
-Dự án website dự báo thời tiết full-stack được xây dựng với Next.js, TypeScript, Tailwind CSS, PostgreSQL và Docker.
+Dự án website dự báo thời tiết và chất lượng không khí full-stack được xây dựng với Next.js, TypeScript, Tailwind CSS, PostgreSQL và Docker.
 
-## 🔐 Tài khoản Test
+## 🔐 Tài khoản Test (Mặc định)
+
+Sau khi khởi chạy cơ sở dữ liệu, bạn có thể sử dụng các tài khoản sau:
 
 ### Admin
 - **Email**: `admin@weather.com`
 - **Password**: `password123`
-- Có thể quản lý sản phẩm, xóa bài viết bất kỳ
+- **Quyền hạn**: Quản lý sản phẩm, xóa bài viết bất kỳ, truy cập trang quản trị.
 
 ### User
-- **Email**: `user@weather.com` hoặc `user2@weather.com`
+- **Email**: `user@weather.com`
 - **Password**: `password123`
-- Tạo bài viết, bình luận, xem sản phẩm
+- **Quyền hạn**: Tạo bài viết, bình luận, xem sản phẩm.
 
-## 🌟 Tính năng
+---
 
-### 1. Trang chủ (Home)
-- Dashboard hiển thị thông tin thời tiết hiện tại
-- Cards thông số: nhiệt độ, độ ẩm, tốc độ gió, áp suất, tầm nhìn, UV index
-- Biểu đồ nhiệt độ 24 giờ với Recharts
-- Biểu đồ dự báo 7 ngày
-- Thông tin bổ sung: mây che phủ, giờ mặt trời mọc/lặn
+## 🚀 Hướng dẫn Cài đặt & Chạy Dự án (Cho người mới bắt đầu)
 
-### 2. Forum
-- Đăng bài viết mới
-- Thảo luận và bình luận
-- Tương tác: like, comment
-- Hiển thị thời gian đăng bài
+Làm theo từng bước dưới đây để chạy dự án trên máy của bạn.
 
-### 3. Sản phẩm (Products)
-- Danh sách sản phẩm với filter theo danh mục
-- Thông tin sản phẩm: tên, giá, rating, mô tả
-- Link đến sản phẩm
-- Banner quảng cáo
+### Bước 1: Cài đặt các công cụ cần thiết
 
-### 4. Xác thực (Auth)
-- Trang đăng nhập
-- Trang đăng ký
-- Trang profile người dùng
-- Chỉnh sửa thông tin cá nhân
+Trước khi bắt đầu, hãy đảm bảo máy tính của bạn đã cài đặt:
 
-## 🚀 Bắt đầu
+1.  **Node.js**: Tải và cài đặt phiên bản LTS từ [nodejs.org](https://nodejs.org/).
+2.  **Docker Desktop**: Tải và cài đặt từ [docker.com](https://www.docker.com/products/docker-desktop/). (Cần thiết để chạy cơ sở dữ liệu).
+3.  **Git**: Tải và cài đặt từ [git-scm.com](https://git-scm.com/).
 
-### 1. Cài đặt dependencies
+### Bước 2: Tải mã nguồn (Clone project)
 
+Mở **Terminal** (trên Mac/Linux) hoặc **PowerShell/CMD** (trên Windows) và chạy lệnh:
+
+```bash
+git clone https://github.com/NguyenCongHau25/weather-forecast.git
+cd weather-forecast
+```
+
+### Bước 3: Cài đặt thư viện (Dependencies)
+
+Dự án này sử dụng `npm` (có sẵn khi cài Node.js) hoặc `yarn`. Bạn có thể chọn một trong hai.
+
+**Cách 1: Sử dụng npm (Khuyên dùng nếu chưa cài yarn)**
+```bash
+npm install
+```
+
+**Cách 2: Sử dụng yarn (Nếu bạn muốn dùng yarn)**
+Nếu chưa có yarn, cài đặt nó bằng lệnh:
+```bash
+npm install --global yarn
+```
+Sau đó cài đặt thư viện của dự án:
 ```bash
 yarn install
 ```
 
-### 2. Khởi động Database
+### Bước 4: Khởi chạy Backend (Cơ sở dữ liệu)
 
-**Yêu cầu**: Docker Desktop phải được cài đặt và đang chạy
+Chúng ta sử dụng Docker để chạy cơ sở dữ liệu PostgreSQL mà không cần cài đặt phức tạp.
+
+1.  Mở ứng dụng **Docker Desktop** và đợi nó khởi động xong.
+2.  Trong terminal (tại thư mục dự án), chạy lệnh sau để tạo và chạy database:
 
 ```bash
-# Cách 1: Sử dụng script tự động
-./setup-database.sh
-
-# Cách 2: Thủ công
-docker-compose up -d
+docker run --name weather-forecast-db \
+  -e POSTGRES_USER=myuser \
+  -e POSTGRES_PASSWORD=mypassword \
+  -e POSTGRES_DB=weather_forecast_db \
+  -p 5432:5432 \
+  -v "$(pwd)/database/init.sql:/docker-entrypoint-initdb.d/init.sql" \
+  -d postgres
 ```
 
-Database sẽ tự động:
-- Tạo bảng
-- Import sample data
-- Tạo tài khoản admin và user
+**Lưu ý:**
+- Nếu bạn gặp lỗi "container name already in use", hãy chạy lệnh sau để xóa container cũ rồi chạy lại lệnh trên:
+  ```bash
+  docker rm -f weather-forecast-db
+  ```
+- Lệnh trên sẽ tự động tạo các bảng và dữ liệu mẫu từ file `database/init.sql`.
 
-### 3. Chạy development server
+### Bước 5: Cấu hình biến môi trường
 
+Dự án đã có sẵn file `.env.local` với cấu hình mặc định. Nếu chưa có, hãy tạo file `.env.local` ở thư mục gốc và dán nội dung sau:
+
+```env
+# Database Configuration
+DATABASE_URL=postgresql://myuser:mypassword@localhost:5432/weather_forecast_db
+
+# JWT Secret (Mã bí mật cho đăng nhập - có thể đổi tùy ý)
+JWT_SECRET=your-super-secret-jwt-key-change-in-production-2025
+
+# Next.js API URL
+NEXT_PUBLIC_API_URL=http://localhost:3000/api
+```
+
+### Bước 6: Khởi chạy Frontend (Website)
+
+Sau khi database đã chạy và thư viện đã cài xong, hãy khởi động website:
+
+**Nếu dùng npm:**
+```bash
+npm run dev
+```
+
+**Nếu dùng yarn:**
 ```bash
 yarn dev
 ```
 
-Mở [http://localhost:3000](http://localhost:3000) để xem kết quả.
+Mở trình duyệt và truy cập: [http://localhost:3000](http://localhost:3000)
 
-### 4. Dừng Database (khi không dùng)
+---
 
+## 🛠 Khắc phục sự cố thường gặp
+
+### 1. Lỗi kết nối Database (Connection refused / Password authentication failed)
+- Đảm bảo Docker đang chạy.
+- Kiểm tra xem container có đang chạy không bằng lệnh `docker ps`.
+- Kiểm tra file `.env.local` xem `DATABASE_URL` có đúng là `postgresql://myuser:mypassword@localhost:5432/weather_forecast_db` không.
+
+### 2. Lỗi "Module not found"
+- Hãy chắc chắn bạn đã chạy `npm install` hoặc `yarn install` thành công.
+- Thử xóa thư mục `node_modules` và cài lại:
+  ```bash
+  rm -rf node_modules
+  npm install
+  ```
+
+### 3. Muốn reset lại dữ liệu database?
+Chạy các lệnh sau để xóa và tạo lại database mới tinh:
 ```bash
-docker-compose down
+docker rm -f weather-forecast-db
+docker run --name weather-forecast-db -e POSTGRES_USER=myuser -e POSTGRES_PASSWORD=mypassword -e POSTGRES_DB=weather_forecast_db -p 5432:5432 -v "$(pwd)/database/init.sql:/docker-entrypoint-initdb.d/init.sql" -d postgres
 ```
 
-### Build production
+## 🌟 Tính năng chính
 
-```bash
-yarn build
-```
-
-### Chạy production server
-
-```bash
-yarn start
-```
-
-## 📁 Cấu trúc thư mục
-
-```
-weather-forecast/
-├── app/                    # App Router pages
-│   ├── page.tsx           # Trang chủ
-│   ├── forum/             # Trang forum
-│   ├── products/          # Trang sản phẩm
-│   ├── login/             # Trang đăng nhập
-│   ├── register/          # Trang đăng ký
-│   ├── profile/           # Trang profile
-│   ├── layout.tsx         # Root layout
-│   └── globals.css        # Global styles
-├── components/            # React components
-│   ├── Header.tsx         # Header navigation
-│   ├── Footer.tsx         # Footer
-│   ├── WeatherCard.tsx    # Weather info card
-│   ├── TemperatureChart.tsx
-│   └── WeeklyForecast.tsx
-├── types/                 # TypeScript types
-│   └── index.ts
-├── utils/                 # Utility functions
-├── lib/                   # Libraries
-└── public/               # Static files
-```
-
-## 🛠️ Công nghệ sử dụng
-
-### Frontend
-- **Framework**: [Next.js 16](https://nextjs.org/) (App Router)
-- **Language**: [TypeScript](https://www.typescriptlang.org/)
-- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
-- **Icons**: [@ant-design/icons](https://ant.design/components/icon)
-- **Charts**: [Recharts](https://recharts.org/)
-- **Date handling**: [date-fns](https://date-fns.org/)
-
-### Backend
-- **Database**: PostgreSQL 15
-- **ORM**: pg (node-postgres)
-- **Authentication**: JWT + bcrypt
-- **API**: Next.js API Routes
-- **Container**: Docker & Docker Compose
-
-### Weather API
-- **Provider**: [Open Meteo](https://open-meteo.com/) (Free, no API key required)
-
-## 📝 Ghi chú
-
-- Hiện tại dự án sử dụng mock data. Bạn có thể tích hợp API thời tiết thực như:
-  - [OpenWeatherMap API](https://openweathermap.org/api)
-  - [WeatherAPI](https://www.weatherapi.com/)
-  - [Visual Crossing Weather API](https://www.visualcrossing.com/weather-api)
-
-- Để tích hợp authentication thật, bạn có thể sử dụng:
-  - [NextAuth.js](https://next-auth.js.org/)
-  - [Supabase Auth](https://supabase.com/docs/guides/auth)
-  - [Firebase Auth](https://firebase.google.com/docs/auth)
-
-## 🎨 Tùy chỉnh
-
-Bạn có thể tùy chỉnh màu sắc và theme trong file `tailwind.config.ts`.
-
-## 📄 License
-
-MIT
+- **Dashboard Chất lượng không khí**: Xem chỉ số PM2.5, PM10 lịch sử và dự báo tại Thủ Đức.
+- **Admin Panel**: Quản lý sản phẩm, người dùng.
+- **Forum**: Đăng bài, bình luận, tương tác.
+- **Profile**: Quản lý thông tin cá nhân.

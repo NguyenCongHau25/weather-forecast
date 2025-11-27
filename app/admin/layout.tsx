@@ -40,16 +40,22 @@ export default function AdminLayout({
   const checkAuth = async () => {
     try {
       const response = await fetch('/api/auth/me');
-      const data = await response.json();
-
-      if (!data.user || data.user.role !== 'admin') {
+      
+      if (!response.ok) {
         router.push('/login');
         return;
       }
 
-      setUser(data.user);
+      const data = await response.json();
+
+      if (!data || data.role !== 'admin') {
+        router.push('/login');
+        return;
+      }
+
+      setUser(data);
     } catch (error) {
-      console.error('Auth error:', error);
+      console.error('Error checking auth:', error);
       router.push('/login');
     } finally {
       setLoading(false);

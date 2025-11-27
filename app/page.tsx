@@ -1,255 +1,152 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import WeatherCard from '@/components/WeatherCard';
-import TemperatureChart from '@/components/TemperatureChart';
-import WeeklyForecast from '@/components/WeeklyForecast';
-import {
-  CloudOutlined,
-  ThunderboltOutlined,
-  DashboardOutlined,
-  EyeOutlined,
-  CompassOutlined,
-  EnvironmentOutlined,
-  LoadingOutlined,
-} from '@ant-design/icons';
-import {
-  getCurrentWeather,
-  getHourlyForecast,
-  getDailyForecast,
-  getWeatherCondition,
-  getWeatherEmoji,
-  type WeatherData,
-  type HourlyData,
-  type DailyData,
-} from '@/lib/weather-api';
+import { getAirQualityHistory, AirQualityData } from '@/lib/air-quality-api';
+import AirQualityChart from '@/components/AirQualityChart';
+import { EnvironmentOutlined, LoadingOutlined } from '@ant-design/icons';
 
-// Default location: Ho Chi Minh City
-const DEFAULT_LOCATION = {
-  name: 'Thành phố Hồ Chí Minh',
-  latitude: 10.8231,
-  longitude: 106.6297,
+// Location: Thu Duc, Ho Chi Minh City
+const LOCATION = {
+  name: 'Thủ Đức',
+  latitude: 10.85,
+  longitude: 106.75,
 };
 
-const LOCATION_OPTIONS = [
-  { name: 'Thành phố Hồ Chí Minh', latitude: 10.8231, longitude: 106.6297 },
-  { name: 'Hà Nội', latitude: 21.0285, longitude: 105.8542 },
-  { name: 'Đà Nẵng', latitude: 16.0544, longitude: 108.2022 },
-  { name: 'Cần Thơ', latitude: 10.0379, longitude: 105.7869 },
-];
+type Pollutant = 'pm2_5' | 'pm10';
+type Timeframe = 'hourly' | 'daily';
 
 export default function Home() {
-  const [currentWeather, setCurrentWeather] = useState<WeatherData | null>(null);
-  const [hourlyData, setHourlyData] = useState<HourlyData[]>([]);
-  const [weeklyData, setWeeklyData] = useState<DailyData[]>([]);
-  const [location, setLocation] = useState(DEFAULT_LOCATION);
+  const [airQualityData, setAirQualityData] = useState<AirQualityData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const [error, setError] = useState<string | null>(null);
+  const [pollutant, setPollutant] = useState<Pollutant>('pm2_5');
+  const [timeframe, setTimeframe] = useState<Timeframe>('hourly');
 
   useEffect(() => {
-    const fetchWeatherData = async () => {
+    const fetchAirQuality = async () => {
       setLoading(true);
+      setError(null);
       try {
-        const [current, hourly, daily] = await Promise.all([
-          getCurrentWeather(location.latitude, location.longitude),
-          getHourlyForecast(location.latitude, location.longitude),
-          getDailyForecast(location.latitude, location.longitude),
-        ]);
-
-        if (current) setCurrentWeather(current);
-        if (hourly) setHourlyData(hourly);
-        if (daily) setWeeklyData(daily);
-      } catch (error) {
-        console.error('Error fetching weather data:', error);
+        const data = await getAirQualityHistory(
+          LOCATION.latitude,
+          LOCATION.longitude,
+          pollutant,
+          timeframe
+        );
+        setAirQualityData(data);
+      } catch (err) {
+        setError('Không thể tải dữ liệu chất lượng không khí.');
+        console.error(err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchWeatherData();
-    // Update time every minute
-    const timeInterval = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 60000);
+    fetchAirQuality();
+  }, [pollutant, timeframe]);
 
-    return () => clearInterval(timeInterval);
-  }, [location]);
+  const getAverage = () => {
+    if (!airQualityData || !airQualityData[pollutant]) return 0;
+    const values = airQualityData[pollutant].filter(v => v !== null) as number[];
+    if (values.length === 0) return 0;
+    const sum = values.reduce((a, b) => a + b, 0);
+    return (sum / values.length).toFixed(2);
+  };
 
-  if (loading || !currentWeather) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white -mt-20 pt-20 flex items-center justify-center">
-        
-      </div>
-    );
-  }
+  const getAQILevel = (value: number) => {
+    if (value <= 12) return { label: 'Tốt', color: 'text-green-500', bgColor: 'bg-green-100' };
+    if (value <= 35.4) return { label: 'Trung bình', color: 'text-yellow-500', bgColor: 'bg-yellow-100' };
+    if (value <= 55.4) return { label: 'Không lành mạnh cho nhóm nhạy cảm', color: 'text-orange-500', bgColor: 'bg-orange-100' };
+    if (value <= 150.4) return { label: 'Không lành mạnh', color: 'text-red-500', bgColor: 'bg-red-100' };
+    if (value <= 250.4) return { label: 'Rất không lành mạnh', color: 'text-purple-500', bgColor: 'bg-purple-100' };
+    return { label: 'Nguy hiểm', color: 'text-red-800', bgColor: 'bg-red-200' };
+  };
+
+  const averageValue = parseFloat(String(getAverage()));
+  const aqiInfo = getAQILevel(averageValue);
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white -mt-20 pt-20">
+    <div className="min-h-screen bg-gray-50 -mt-20 pt-20">
       <div className="container mx-auto px-4 py-8">
-        {/* Hero Section with Background Image Style */}
-        <div className="relative bg-gradient-to-br from-teal-400 via-blue-300 to-blue-400 rounded-3xl p-12 mb-8 shadow-2xl overflow-hidden">
-          {/* Background pattern */}
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-0 left-0 w-full h-full" style={{
-              backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(255,255,255,0.3) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(255,255,255,0.2) 0%, transparent 50%)'
-            }}></div>
-          </div>
-          
-          <div className="relative flex items-start justify-between">
-            <div className="text-white">
-              <div className="flex items-center space-x-2 mb-4">
-                <EnvironmentOutlined className="text-xl" />
-                <h2 className="text-lg font-medium">{location.name}</h2>
-              </div>
-              <div className="flex items-baseline space-x-3 mb-2">
-                <div className="flex items-center">
-                  <span className="text-8xl font-light">{currentWeather.temperature}</span>
-                  <span className="text-5xl font-light">°</span>
-                </div>
+        <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-800">Chất lượng không khí</h1>
+              <div className="flex items-center text-gray-500 mt-1">
+                <EnvironmentOutlined className="mr-2" />
+                <span>{LOCATION.name}, TP. Hồ Chí Minh</span>
               </div>
             </div>
-            <div className="text-right text-white">
-              <p className="text-5xl mb-2">{getWeatherEmoji(currentWeather.weatherCode)}</p>
-              <p className="text-xl font-medium">
-                {currentTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
-              </p>
-              <p className="text-lg">
-                {getWeatherCondition(currentWeather.weatherCode)}, 
-                {currentTime.toLocaleDateString('vi-VN', { weekday: 'long' })}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Weather Cards Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {/* Humidity Card */}
-          <div className="bg-white/90 backdrop-blur rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
-            <div className="flex items-center space-x-3 mb-3">
-              <div>
-                <p className="text-sm text-gray-500 font-medium">Độ ẩm</p>
-                <p className="text-2xl font-bold text-gray-800">{currentWeather.humidity}%</p>
+            <div className="flex space-x-2 mt-4 sm:mt-0">
+              {/* Timeframe Toggle */}
+              <div className="flex bg-gray-100 rounded-lg p-1">
+                <button
+                  onClick={() => setTimeframe('hourly')}
+                  className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                    timeframe === 'hourly' ? 'bg-white text-blue-600 shadow' : 'text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  Giờ
+                </button>
+                <button
+                  onClick={() => setTimeframe('daily')}
+                  className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                    timeframe === 'daily' ? 'bg-white text-blue-600 shadow' : 'text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  Ngày
+                </button>
               </div>
-            </div>
-          </div>
-
-           {/* Wind Card */}
-          <div className="bg-white/90 backdrop-blur rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
-            <div className="flex items-center space-x-3 mb-3">
-              <div>
-                <p className="text-sm text-gray-500 font-medium">Gió</p>
-                <p className="text-2xl font-bold text-gray-800">{currentWeather.windSpeed} km/h</p>
+              {/* Pollutant Toggle */}
+              <div className="flex bg-gray-100 rounded-lg p-1">
+                <button
+                  onClick={() => setPollutant('pm2_5')}
+                  className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                    pollutant === 'pm2_5' ? 'bg-white text-blue-600 shadow' : 'text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  PM2.5
+                </button>
+                <button
+                  onClick={() => setPollutant('pm10')}
+                  className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                    pollutant === 'pm10' ? 'bg-white text-blue-600 shadow' : 'text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  PM10
+                </button>
               </div>
             </div>
           </div>
 
-          {/* Pressure Card */}
-          <div className="bg-white/90 backdrop-blur rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
-            <div className="flex items-center space-x-3 mb-3">
-              <div>
-                <p className="text-sm text-gray-500 font-medium">Áp suất</p>
-                <p className="text-2xl font-bold text-gray-800">{currentWeather.pressure} hPa</p>
+          {/* Main Content */}
+          {loading ? (
+            <div className="flex justify-center items-center h-80">
+              <LoadingOutlined className="text-4xl text-blue-500" />
+            </div>
+          ) : error ? (
+            <div className="flex justify-center items-center h-80 text-red-500 bg-red-50 rounded-lg">
+              {error}
+            </div>
+          ) : airQualityData ? (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Average Info */}
+              <div className="lg:col-span-1 flex flex-col justify-center items-center bg-gray-50 rounded-xl p-6 text-center">
+                <p className="text-gray-600 font-medium">Chỉ số {pollutant.toUpperCase()} trung bình</p>
+                <p className={`text-6xl font-bold my-2 ${aqiInfo.color}`}>{averageValue}</p>
+                <span className={`px-4 py-1.5 rounded-full text-sm font-semibold ${aqiInfo.bgColor} ${aqiInfo.color}`}>
+                  {aqiInfo.label}
+                </span>
+              </div>
+              {/* Chart */}
+              <div className="lg:col-span-2 h-80">
+                <AirQualityChart data={airQualityData} pollutant={pollutant} timeframe={timeframe} />
               </div>
             </div>
-          </div>
-
-          {/* UV Index Card */}
-          <div className="bg-white/90 backdrop-blur rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
-            <div className="flex items-center space-x-3 mb-3">
-              <div>
-                <p className="text-sm text-gray-500 font-medium">Chỉ số UV</p>
-                <p className="text-2xl font-bold text-gray-800">{currentWeather.uvIndex}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Visibility Card */}
-          <div className="bg-white/90 backdrop-blur rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
-            <div className="flex items-center space-x-3 mb-3">
-              <div>
-                <p className="text-sm text-gray-500 font-medium">Tầm nhìn</p>
-                <p className="text-2xl font-bold text-gray-800">{currentWeather.visibility} km</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Sunrise Card */}
-          <div className="bg-white/90 backdrop-blur rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
-            <div className="flex items-center space-x-3 mb-3">
-              <div>
-                <p className="text-sm text-gray-500 font-medium">Bình minh</p>
-                <p className="text-2xl font-bold text-gray-800">{currentWeather.sunrise}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Sunset Card */}
-          <div className="bg-white/90 backdrop-blur rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
-            <div className="flex items-center space-x-3 mb-3">
-              <div>
-                <p className="text-sm text-gray-500 font-medium">Hoàng hôn</p>
-                <p className="text-2xl font-bold text-gray-800">{currentWeather.sunset}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Cloud Cover Card */}
-          <div className="bg-white/90 backdrop-blur rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
-            <div className="flex items-center space-x-3 mb-3">
-              <div>
-                <p className="text-sm text-gray-500 font-medium">Mây che phủ</p>
-                <p className="text-2xl font-bold text-gray-800">{currentWeather.cloudCover}%</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Temperature Chart */}
-          <div className="bg-white/90 backdrop-blur rounded-2xl shadow-lg p-6">
-            {/* <h3 className="text-lg font-bold text-gray-800 mb-4">Temperature Chart</h3> */}
-            <TemperatureChart data={hourlyData} />
-          </div>
-
-          {/* Weekly Forecast */}
-          <div className="bg-white/90 backdrop-blur rounded-2xl shadow-lg p-6">
-            {/* <h3 className="text-lg font-bold text-gray-800 mb-4">7 Days Forecast</h3> */}
-            <WeeklyForecast data={weeklyData} />
-          </div>
-        </div>
-
-        {/* Additional Weather Info */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Precipitation Card */}
-          <div className="bg-gradient-to-r from-blue-400 to-blue-600 rounded-2xl p-8 shadow-lg text-white">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-lg font-medium mb-2 opacity-90">Lượng mưa hiện tại</p>
-                <p className="text-5xl font-bold">{currentWeather.precipitation.toFixed(1)} mm</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Wind Direction Card */}
-          <div className="bg-gradient-to-r from-cyan-400 to-blue-500 rounded-2xl p-8 shadow-lg text-white">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-lg font-medium mb-2 opacity-90">Hướng gió</p>
-                <p className="text-5xl font-bold">{currentWeather.windDirection}°</p>
-                <p className="text-lg mt-2 opacity-80">
-                  {currentWeather.windDirection >= 337.5 || currentWeather.windDirection < 22.5 ? 'Bắc' :
-                   currentWeather.windDirection >= 22.5 && currentWeather.windDirection < 67.5 ? 'Đông Bắc' :
-                   currentWeather.windDirection >= 67.5 && currentWeather.windDirection < 112.5 ? 'Đông' :
-                   currentWeather.windDirection >= 112.5 && currentWeather.windDirection < 157.5 ? 'Đông Nam' :
-                   currentWeather.windDirection >= 157.5 && currentWeather.windDirection < 202.5 ? 'Nam' :
-                   currentWeather.windDirection >= 202.5 && currentWeather.windDirection < 247.5 ? 'Tây Nam' :
-                   currentWeather.windDirection >= 247.5 && currentWeather.windDirection < 292.5 ? 'Tây' : 'Tây Bắc'}
-                </p>
-              </div>
-            </div>
-          </div>
+          ) : null}
         </div>
       </div>
-      </div>
+    </div>
   );
 }

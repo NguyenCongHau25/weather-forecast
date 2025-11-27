@@ -44,30 +44,30 @@ export default function AdminDashboard() {
     {
       title: 'Tổng Users',
       value: stats.totalUsers,
-      icon: <UserOutlined className="text-4xl" />,
-      color: 'bg-blue-500',
-      textColor: 'text-blue-500',
+      icon: <UserOutlined className="text-3xl" />,
+      color: 'bg-blue-100',
+      textColor: 'text-blue-600',
     },
     {
       title: 'Forum Posts',
       value: stats.totalPosts,
-      icon: <FileTextOutlined className="text-4xl" />,
-      color: 'bg-green-500',
-      textColor: 'text-green-500',
+      icon: <FileTextOutlined className="text-3xl" />,
+      color: 'bg-green-100',
+      textColor: 'text-green-600',
     },
     {
       title: 'Products',
       value: stats.totalProducts,
-      icon: <ShoppingOutlined className="text-4xl" />,
-      color: 'bg-purple-500',
-      textColor: 'text-purple-500',
+      icon: <ShoppingOutlined className="text-3xl" />,
+      color: 'bg-purple-100',
+      textColor: 'text-purple-600',
     },
     {
       title: 'Comments',
       value: stats.totalComments,
-      icon: <RiseOutlined className="text-4xl" />,
-      color: 'bg-orange-500',
-      textColor: 'text-orange-500',
+      icon: <RiseOutlined className="text-3xl" />,
+      color: 'bg-orange-100',
+      textColor: 'text-orange-600',
     },
   ];
 
@@ -76,7 +76,6 @@ export default function AdminDashboard() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-800 mb-2">Dashboard</h1>
-        <p className="text-gray-600">Tổng quan hệ thống quản lý</p>
       </div>
 
       {/* Stats Grid */}
@@ -87,7 +86,7 @@ export default function AdminDashboard() {
             className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow"
           >
             <div className="flex items-center justify-between mb-4">
-              <div className={`p-3 rounded-lg ${card.color} bg-opacity-10`}>
+              <div className={`p-4 rounded-xl ${card.color}`}>
                 <div className={card.textColor}>{card.icon}</div>
               </div>
             </div>
