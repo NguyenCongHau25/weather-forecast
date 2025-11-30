@@ -2,7 +2,7 @@
 
 Dự án website dự báo thời tiết và chất lượng không khí full-stack được xây dựng với Next.js, TypeScript, Tailwind CSS, PostgreSQL và Docker.
 
-## 🔐 Tài khoản Test (Mặc định)
+## Tài khoản Test (Mặc định)
 
 Sau khi khởi chạy cơ sở dữ liệu, bạn có thể sử dụng các tài khoản sau:
 
@@ -18,7 +18,7 @@ Sau khi khởi chạy cơ sở dữ liệu, bạn có thể sử dụng các tà
 
 ---
 
-## 🚀 Hướng dẫn Cài đặt & Chạy Dự án (Cho người mới bắt đầu)
+## Hướng dẫn thiết lập và chạy dự án
 
 Làm theo từng bước dưới đây để chạy dự án trên máy của bạn.
 
@@ -97,9 +97,28 @@ JWT_SECRET=your-super-secret-jwt-key-change-in-production-2025
 NEXT_PUBLIC_API_URL=http://localhost:3000/api
 ```
 
-### Bước 6: Khởi chạy Frontend (Website)
+### Bước 6: Khởi chạy Python Backend (Mô hình dự đoán)
 
-Sau khi database đã chạy và thư viện đã cài xong, hãy khởi động website:
+Để sử dụng tính năng dự đoán chất lượng không khí bằng AI, bạn cần chạy server Python.
+
+1.  Mở một cửa sổ terminal mới.
+2.  Di chuyển vào thư mục `python_backend`:
+    ```bash
+    cd python_backend
+    ```
+3.  Cài đặt các thư viện Python cần thiết:
+    ```bash
+    pip install -r requirements.txt
+    ```
+4.  Khởi chạy server API:
+    ```bash
+    uvicorn app:app --reload
+    ```
+    Server sẽ chạy tại `http://localhost:8000`.
+
+### Bước 7: Khởi chạy Frontend (Website)
+
+Sau khi database và python backend đã chạy, hãy khởi động website:
 
 **Nếu dùng npm:**
 ```bash
@@ -137,7 +156,7 @@ docker rm -f weather-forecast-db
 docker run --name weather-forecast-db -e POSTGRES_USER=myuser -e POSTGRES_PASSWORD=mypassword -e POSTGRES_DB=weather_forecast_db -p 5432:5432 -v "$(pwd)/database/init.sql:/docker-entrypoint-initdb.d/init.sql" -d postgres
 ```
 
-## 🌟 Tính năng chính
+## Tính năng chính
 
 - **Dashboard Chất lượng không khí**: Xem chỉ số PM2.5, PM10 lịch sử và dự báo tại Thủ Đức.
 - **Admin Panel**: Quản lý sản phẩm, người dùng.
