@@ -20,8 +20,8 @@ export async function getAirQualityHistory(
       latitude: latitude,
       longitude: longitude,
       hourly: ["pm10", "pm2_5"],
-      past_days: days,
-      forecast_days: timeframe === 'daily' ? 5 : 1, // Get forecast if daily view is requested
+      past_days: timeframe === 'hourly' ? 2 : days, // Fetch 2 days for hourly to ensure 24h coverage
+      forecast_days: timeframe === 'daily' ? 5 : 2, // Ensure we have data for the current day
       timezone: 'Asia/Bangkok',
     };
 
@@ -40,12 +40,22 @@ export async function getAirQualityHistory(
     const pm10Raw = hourly.variables(0)!.valuesArray()!;
     const pm2_5Raw = hourly.variables(1)!.valuesArray()!;
 
-    // If hourly requested, return as is
+    // If hourly requested, return last 24 hours from now
     if (timeframe === 'hourly') {
+      const now = new Date();
+      const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      
+      const filteredIndices: number[] = [];
+      time.forEach((t, i) => {
+        if (t >= twentyFourHoursAgo && t <= now) {
+          filteredIndices.push(i);
+        }
+      });
+
       return {
-        time: time.map(t => t.toISOString()),
-        pm10: Array.from(pm10Raw),
-        pm2_5: Array.from(pm2_5Raw),
+        time: filteredIndices.map(i => time[i].toISOString()),
+        pm10: filteredIndices.map(i => pm10Raw[i]),
+        pm2_5: filteredIndices.map(i => pm2_5Raw[i]),
       };
     }
 

@@ -98,6 +98,9 @@ export async function runModelInference(
 
   if (modelId === 'model') {
       try {
+          // Add 1 second delay
+          await new Promise(resolve => setTimeout(resolve, 1000));
+
           // Call API directly without input data (it uses internal dataset)
           const res = await fetch('http://localhost:8000/predict', {
               method: 'POST',
@@ -110,13 +113,17 @@ export async function runModelInference(
           const prediction = await res.json();
           
           const now = new Date();
+          // Round up to the next hour
+          now.setMinutes(0, 0, 0);
+          now.setHours(now.getHours() + 1);
+
           let timeArray: string[] = [];
 
           if (timeframe === 'hourly') {
               timeArray = [
+                  new Date(now.getTime()).toISOString(),
                   new Date(now.getTime() + 1*3600000).toISOString(),
                   new Date(now.getTime() + 2*3600000).toISOString(),
-                  new Date(now.getTime() + 3*3600000).toISOString(),
               ];
           } else {
               // Daily - add days

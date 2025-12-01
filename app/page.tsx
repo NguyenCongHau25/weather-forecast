@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { getAirQualityHistory, AirQualityData } from '@/lib/air-quality-api';
 import { runModelInference, ModelType } from '@/lib/prediction-service';
 import AirQualityChart from '@/components/AirQualityChart';
-import { EnvironmentOutlined, LoadingOutlined, ExperimentOutlined } from '@ant-design/icons';
+import { EnvironmentOutlined, ExperimentOutlined } from '@ant-design/icons';
 
 // Location: Thu Duc, Ho Chi Minh City
 const LOCATION = {
@@ -18,47 +18,54 @@ type Timeframe = 'hourly' | 'daily';
 
 export default function Home() {
   const [airQualityData, setAirQualityData] = useState<AirQualityData | null>(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pollutant, setPollutant] = useState<Pollutant>('pm2_5');
   const [timeframe, setTimeframe] = useState<Timeframe>('hourly');
-  const [selectedModel, setSelectedModel] = useState<ModelType>('api');
+  const [selectedModel, setSelectedModel] = useState<ModelType>('model');
+  const [predictionCache, setPredictionCache] = useState<AirQualityData | null>(null);
 
+  // Pre-fetch prediction data on mount
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      setError(null);
+    const loadPrediction = async () => {
       try {
-        let data: AirQualityData | null;
-
-        if (selectedModel === 'api') {
-          data = await getAirQualityHistory(
-            LOCATION.latitude,
-            LOCATION.longitude,
-            pollutant,
-            timeframe
-          );
-        } else {
-          data = await runModelInference(
-            selectedModel,
-            LOCATION.latitude,
-            LOCATION.longitude,
-            pollutant,
-            timeframe
-          );
-        }
-
-        setAirQualityData(data);
+        const data = await runModelInference('model', LOCATION.latitude, LOCATION.longitude, 'pm2_5', 'hourly');
+        setPredictionCache(data);
       } catch (err) {
-        setError('Không thể tải dữ liệu.');
         console.error(err);
-      } finally {
-        setLoading(false);
       }
     };
+    loadPrediction();
+  }, []);
 
-    fetchData();
-  }, [pollutant, timeframe, selectedModel]);
+  // Handle API data fetching
+  useEffect(() => {
+    if (selectedModel === 'api') {
+      const fetchApiData = async () => {
+        setError(null);
+        try {
+          const data = await getAirQualityHistory(
+            LOCATION.latitude,
+            LOCATION.longitude,
+            pollutant,
+            timeframe
+          );
+          setAirQualityData(data);
+        } catch (err) {
+          setError('Không thể tải dữ liệu.');
+          console.error(err);
+        }
+      };
+      fetchApiData();
+    }
+  }, [selectedModel, pollutant, timeframe]);
+
+  // Handle Model data from cache
+  useEffect(() => {
+    if (selectedModel === 'model' && predictionCache) {
+      setError(null);
+      setAirQualityData(predictionCache);
+    }
+  }, [selectedModel, predictionCache]);
 
   const getAverage = () => {
     if (!airQualityData || !airQualityData[pollutant]) return 0;
@@ -96,15 +103,7 @@ export default function Home() {
             <div className="flex flex-wrap gap-2 mt-4 sm:mt-0">
               {/* Model Selector */}
               <div className="flex bg-gray-100 rounded-lg p-1 mr-2">
-                <button
-                  onClick={() => setSelectedModel('api')}
-                  className={`px-3 py-1 text-sm font-medium rounded-md transition-colors flex items-center ${
-                    selectedModel === 'api' ? 'bg-white text-blue-600 shadow' : 'text-gray-600 hover:bg-gray-200'
-                  }`}
-                  title="Dữ liệu thực tế từ Open-Meteo API"
-                >
-                  <EnvironmentOutlined className="mr-1" /> API
-                </button>
+                
                 <button
                   onClick={() => setSelectedModel('model')}
                   className={`px-3 py-1 text-sm font-medium rounded-md transition-colors flex items-center ${
@@ -112,29 +111,22 @@ export default function Home() {
                   }`}
                   title="Mô hình dự đoán (Demo)"
                 >
-                  <ExperimentOutlined className="mr-1" /> Model
+                  <ExperimentOutlined className="mr-1" /> Dự đoán
+                </button>
+
+                <button
+                  onClick={() => setSelectedModel('api')}
+                  className={`px-3 py-1 text-sm font-medium rounded-md transition-colors flex items-center ${
+                    selectedModel === 'api' ? 'bg-white text-blue-600 shadow' : 'text-gray-600 hover:bg-gray-200'
+                  }`}
+                  title="Dữ liệu thực tế từ Open-Meteo API"
+                >
+                  <EnvironmentOutlined className="mr-1" /> Lịch sử
                 </button>
               </div>
 
-              {/* Timeframe Toggle */}
-              <div className="flex bg-gray-100 rounded-lg p-1">
-                <button
-                  onClick={() => setTimeframe('hourly')}
-                  className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
-                    timeframe === 'hourly' ? 'bg-white text-blue-600 shadow' : 'text-gray-600 hover:bg-gray-200'
-                  }`}
-                >
-                  Giờ
-                </button>
-                <button
-                  onClick={() => setTimeframe('daily')}
-                  className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
-                    timeframe === 'daily' ? 'bg-white text-blue-600 shadow' : 'text-gray-600 hover:bg-gray-200'
-                  }`}
-                >
-                  Ngày
-                </button>
-              </div>
+              {/* Timeframe Toggle - Removed as per request */}
+              
               {/* Pollutant Toggle */}
               <div className="flex bg-gray-100 rounded-lg p-1">
                 <button
@@ -158,11 +150,7 @@ export default function Home() {
           </div>
 
           {/* Main Content */}
-          {loading ? (
-            <div className="flex justify-center items-center h-80">
-              <LoadingOutlined className="text-4xl text-blue-500" />
-            </div>
-          ) : error ? (
+          {error ? (
             <div className="flex justify-center items-center h-80 text-red-500 bg-red-50 rounded-lg">
               {error}
             </div>
